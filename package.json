@@ -1,0 +1,24 @@
+{
+  "name": "node-webapp",
+  "description": "A Node/Express Web App that demostrates some cool features",
+  "version": "0.1.0",
+  "homepage": "http://webmolecule.co.za",
+  "repository": "ssh://git.github.com/myanimal/node-webapp",
+  "author": "Alex Koller <alex@webmolecule.co.za>",
+  "main": "app.js",
+  "engines": {
+    "node": "0.8.3"
+  },
+  "files": [],
+  "dependencies": {
+    "consolidate": "0.3.1",
+    "express": "3.0.0beta7",
+    "hiredis": "0.1.14",
+    "jsdom": "0.2.15",
+    "redis": "0.7.2",
+    "socket.io": "0.9.6",
+    "swig": "0.11.2",
+  },
+  "devDependencies": {
+  }
+}

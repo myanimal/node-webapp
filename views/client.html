@@ -1,0 +1,114 @@
+<!DOCTYPE html><html lang="en"><head><title>Sockets</title></head><body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<script>
+	// on load of page
+	$(function(){
+
+		var socket = io.connect('http://localhost:1337');
+
+		// on connection to server, ask for user's name with an anonymous callback
+		socket.on('connect', function() {
+			// call the server-side function 'adduser' and send one parameter (value of prompt)
+			socket.emit('adduser', prompt("What's your name?"));
+		});
+
+		// listener, whenever the server emits 'updatechat', this updates the chat body
+		socket.on('updatechat', function (username, data) {
+			$('#conversation').append('<b>'+username + ':</b> ' + data + '<br>');
+		});
+
+		// listener, whenever the server emits 'updateusers', this updates the username list
+		socket.on('updateusers', function(data) {
+			$('#users').empty();
+			$.each(data, function(key, value) {
+				$('#users').append('<div>' + key + '</div>');
+			});
+		});
+
+		socket.on('updatecalllog', function(data) {
+			$('#calls table tr:gt(0)').remove();
+			$.each(data, function(key, value) {
+				$('#calls table').append('<tr><td>' + 
+					value.operator + '</td><td>' + 
+					key + '</td><td>' + 
+					pretyDate(value.start) + '</td><td>' + 
+					pretyDate(value.answered) + '</td><td>' + 
+					pretyDate(value.end) + '</td><td></tr>');
+			});
+		});
+
+		function pretyDate(dateString) {
+			if (!dateString) return '';
+			var date = new Date(dateString);
+			var hours = date.getHours();
+			var mins = date.getMinutes();
+			var secs = date.getSeconds();
+
+			return [hours, mins, secs].join(':');
+		}
+
+		socket.on('incomingcall', function(number) {
+			$('#call-alert')
+				.html('Incoming call: ' + number)
+				.css('background-color', 'red')
+				.slideDown();
+			$('#call-answer').toggle();
+		});
+		$('#call-answer').click(function(){
+			$('#call-alert')
+				.html('On call..')
+				.css('background-color', 'green');
+			$('#call-answer').toggle();
+			$('#call-end').toggle();
+			socket.emit('answercall');
+		});
+		$('#call-end').click(function(){
+			$('#call-alert')
+				.html('Call ended.')
+				.delay(1500)
+				.slideUp();
+			$('#call-end').toggle();
+			socket.emit('endcall');
+		});
+
+		// when the client clicks SEND
+		$('#datasend').click( function() {
+			var message = $('#data').val();
+			$('#data').val('');
+			// tell server to execute 'sendchat' and send along one parameter
+			socket.emit('sendchat', message);
+		});
+
+		// when the client hits ENTER on their keyboard
+		$('#data').keypress(function(e) {
+			if(e.which == 13) {
+				$(this).blur();
+				$('#datasend').focus().click();
+				$(this).focus();
+			}
+		});
+	});
+
+</script>
+<h2>Sockets.io: Chat and Call Operator Functions</h2><a href="/">Home</a><hr />
+<div style="float:left;width:100px;border-right:1px solid black;height:300px;padding:10px;overflow:scroll-y;">
+	<b>USERS</b>
+	<div id="users"></div>
+</div>
+<div style="float:left;width:300px;;border-right:1px solid;height:300px;overflow:scroll-y;padding:10px;">
+	<div id="conversation"></div>
+	<input type="text" id="data" style="width:200px;" />
+	<input type="button" id="datasend" value="send" />
+</div>
+<div style="float:left;width:400px;height:300px;overflow:scroll-y;padding:10px;">
+	<div id="call-alert" style="border: 1px solid black; padding: 10px; display: none;">waiting for calls...</div>
+	<input type="button" id="call-answer" value="answer call" style="display: none;" />
+	<input type="button" id="call-end" value="end call" style="display: none;" />
+	<br />
+	<b>CALLS</b>
+	<div id="calls">
+		<table width="100%"><tr><th>Operator</th><th>Number</th><th>Start</th><th>Answered</th><th>End</th></tr></table>
+	</div>
+</div>
+</body></html>
