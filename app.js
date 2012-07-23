@@ -1,24 +1,32 @@
-var express = require('express');
-var io = require('socket.io');
-var http = require('http');
-var jsdom = require('jsdom');
-var redisLib = require('redis');
-var redis = new redisLib.createClient();
+var express = require('express'),
+    swig = require('swig'),
+    io = require('socket.io'),
+    http = require('http'),
+    jsdom = require('jsdom'),
+    redisLib = require('redis'),
+    redis = new redisLib.createClient();
 
 // create and configure express app
-var app = express.createServer();
-var server = http.createServer(app);
-var io = require('socket.io').listen(server);
+var app = express.createServer(),
+    server = http.createServer(app),
+    io = require('socket.io').listen(server);
 
 server.listen(1337);
 console.log('Server running at http://127.0.0.1:1337/');
 
 // create and configure express app
 app.configure(function() {
-    app.set('views', __dirname + '/views');
-    app.set('view engine', 'html');
+    swig.init({
+        root: __dirname + '/views',
+        allowErrors: true // allows errors to be thrown and caught by express
+    });
     app.engine('.html', require('consolidate').swig);
+    // app.set('views', __dirname + '/views');
+    app.set('view engine', 'html');
+    app.set('view options', { layout: false });
     app.use(express.bodyParser());
+    app.use(express.static(__dirname + '/public'));
+    app.use(app.router);
     // app.use(express.cookieParser());
     // app.use(express.session({store: sesh, secret: config.redis_secret}));
     // app.use(everyauth.middleware()); // pretend you didn't see this yet
@@ -60,16 +68,6 @@ function getWikiArticle(response, title, cb) {
             cb(cacheResponse);
         } else {
             // check for special case pages
-            var elementsToRemove = [
-                'table.infobox',
-                'table.metadata',
-                'table.toc',
-                'sup.reference',
-                'strong.error',
-                'span.editsection',
-                'div.dablink',
-                'table.verticle-nabvox'
-            ];
             var sections = '&section=0';
             if (title.endsWith('(disambiguation)')) {
                 sections = '';
@@ -100,11 +98,29 @@ function getWikiArticle(response, title, cb) {
                         html = data.parse.text['*'];
                         // use jsdom to parse html and remove unwanted elements with jQuery
                         jsdom.env(html, [
-                            'http://code.jquery.com/jquery-1.5.min.js'
+                            // 'http://code.jquery.com/jquery-1.5.min.js'
+                            __dirname + '/public/js/libs/jquery-1.7.2.min.js'
                         ],
                         function(errors, window) {
+                            // check for elements to remove/unwrap
+                            var elementsToRemove = [
+                                'table', //all tables?
+                                // 'table.infobox',
+                                // 'table.metadata',
+                                // 'table.toc',
+                                // 'table.vertical-navbox',
+                                'sup.reference',
+                                'strong.error',
+                                'div.dablink',
+                                'div.thumbcaption',
+                                'span.editsection'
+                            ];
+                            var elementsToUnwrap = [
+                                'a.image > img.thumbimage'
+                            ];
                             console.log('Removing from article: ' + elementsToRemove.join());
                             window.$(elementsToRemove.join()).remove();
+                            window.$(elementsToUnwrap.join()).unwrap();
                             result.result = true;
                             result.article = window.$("body").html();
                             console.log("WikiAPI: Got article.")

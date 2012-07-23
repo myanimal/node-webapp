@@ -1,9 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><title>Wiki Mxit</title></head><body>
-<h2>Wiki Mxit: {{ title|replace('_', ' ', 'g') }}</h2><a href="/">Home</a><hr />
+{% extends 'layout.html' %}
+
+{% block title %} {{ title|url_decode|replace('_', ' ', 'g') }}{% endblock %}
+
+{% block body %}
 {{ article|raw }}
-<hr />
-<p style="color: #ccc; font-size: small;">
-    View <a href="http://en.wikipedia.org/wiki/{{ title }}">original article</a><br/>
-    Text is available under the <a rel="license" href="//en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License">Creative Commons Attribution-ShareAlike License</a>; additional terms may apply. <a href="//wikimediafoundation.org/wiki/Terms_of_use">Terms of use</a> for details.<br> Wikipedia&reg; is a registered trademark of the <a href="//www.wikimediafoundation.org/">Wikimedia Foundation, Inc.</a>, a non-profit organization.<br/>
-</p>
-</body></html>
+{% endblock %}

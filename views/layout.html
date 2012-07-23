@@ -1,4 +1,37 @@
-<!DOCTYPE html><html lang="en"><head><title>Wiki Mxit</title></head><body>
-<h2>Wiki Mxit</h2><a href="/">Home</a><br />
-{{html body}}
-</body></html>
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>{% block title %}{% endblock %} - Wxit</title>
+
+    {% block head %}
+    <link rel="stylesheet" href="/css/main.css" type="text/css" media="all" />
+    {% endblock %}
+
+</head>
+<body>
+
+    <header>
+        <h1>{% block title %}{% endblock %}</h1>
+        {% block header %}{% endblock %}
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/wiki">Wxit</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section role="main">
+        {% block body %}{% endblock %}
+    </section>
+
+    <footer>
+    	<p style="color: #ccc; font-size: small;">
+    		View <a href="http://en.wikipedia.org/wiki/{{ title }}">original article</a><br>
+    		Text is available under the <a rel="license" href="//en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License">Creative Commons Attribution-ShareAlike License</a>; additional terms may apply. <a href="//wikimediafoundation.org/wiki/Terms_of_use">Terms of use</a> for details.<br>
+    		Wikipedia&reg; is a registered trademark of the <a href="//www.wikimediafoundation.org/">Wikimedia Foundation, Inc.</a>, a non-profit organization.<br>
+		</p>
+    </footer>
+</body>
+</html>
