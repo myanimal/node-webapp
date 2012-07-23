@@ -66,7 +66,9 @@ function getWikiArticle(response, title, cb) {
                 'table.toc',
                 'sup.reference',
                 'strong.error',
-                'span.editsection'
+                'span.editsection',
+                'div.dablink',
+                'table.verticle-nabvox'
             ];
             var sections = '&section=0';
             if (title.endsWith('(disambiguation)')) {
@@ -127,7 +129,7 @@ function getWikiArticle(response, title, cb) {
 }
 
 function addToCache(title, article) {
-    var expire = 600;
+    var expire = 604800;
     console.log("Cache: adding " + title + " for " + expire + "s");
     redis.set('article:'+title, article);
     redis.expire('article:'+title, expire);
