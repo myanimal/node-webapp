@@ -1,15 +1,18 @@
 {% extends 'layout.html' %}
 
-{% block title %}Recent Wxit Trends{% endblock %}
+{% block title %}What's Trending{% endblock %}
 
 {% block body %}
 <ol>
     {% for trend in trends %}
 	    {% if loop.index <= 10 %}<!-- <li>{{ trend|raw }}</li> -->
-	    	<li><a href="/wiki/{{ trend.url }}">{{ trend.title }}</a> ({{ trend['total-pageviews'] }} total views)</li>
+	    	<li>
+	    		<a href="/wiki/{{ trend.url }}">{{ trend.title }}</a> <span class="green">{{ trend.change }}</span><br>
+	    		<p>{{ trend.summary }}</p>
+	    	</li>
 	    {% endif %}
     {% endfor %}
 </ol>
 {% endblock %}
 
-{% block footer %}{% endblock %}
+{% block footer %}<p>Trend information obtained from <a href="http://toolserver.org/~johang/wikitrends">Wikitrends</a>.</p>{% endblock %}

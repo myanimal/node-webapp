@@ -21,7 +21,6 @@ app.configure(function() {
         allowErrors: true // allows errors to be thrown and caught by express
     });
     app.engine('.html', require('consolidate').swig);
-    // app.set('views', __dirname + '/views');
     app.set('view engine', 'html');
     app.set('view options', { layout: false });
     app.use(express.bodyParser());
@@ -47,6 +46,9 @@ app.get('/wiki',function(req, res) {
             res.render('error', {error: trends.error});
         }
     });
+});
+app.get('/wiki/__trends__',function(req, res) {
+    res.redirect('/wiki');
 });
 app.get('/wiki/:title?/:extra?', function(req, res) {
     getWikiArticle(res, req.params.title, function(article) {
@@ -82,7 +84,7 @@ function getWikiArticle(response, title, cb) {
                 host: "en.wikipedia.org",
                 path: '/w/api.php?format=json&action=parse' + sections + '&page=' + title,
                 headers : {
-                    'user-agent': 'myTestWikiBot/0.1'
+                    'user-agent': 'theWxitBot/0.1'
                 },
                 method: "GET"
             };
@@ -104,7 +106,6 @@ function getWikiArticle(response, title, cb) {
                         html = data.parse.text['*'];
                         // use jsdom to parse html and remove unwanted elements with jQuery
                         jsdom.env(html, [
-                            // 'http://code.jquery.com/jquery-1.5.min.js'
                             __dirname + '/public/js/libs/jquery-1.7.2.min.js'
                         ],
                         function(errors, window) {
@@ -118,6 +119,7 @@ function getWikiArticle(response, title, cb) {
                                 'a.Listen',
                                 'sup.reference',
                                 'sup.noexerpt',
+                                'sup.Template-Fact',
                                 'strong.error',
                                 'div.dablink',
                                 'div.thumbcaption',
@@ -170,10 +172,12 @@ function getWikiTrends(response, cb) {
         } else {
             // check for special case pages
             var opts = {
-                host: "www.trendingtopics.org",
-                path: '/pages.xml?page=1',
+                // host: "www.trendingtopics.org",
+                // path: '/pages.xml?page=1',
+                host: 'toolserver.org',
+                path: '/~johang/wikitrends/english-uptrends-this-week.html',
                 headers : {
-                    'user-agent': 'myTestWikiBot/0.1'
+                    'user-agent': 'theWxitBot/0.1'
                 },
                 method: "GET"
             };
@@ -186,20 +190,27 @@ function getWikiTrends(response, cb) {
                     data += chunk;
                 });
                 apiResp.on('end', function () {
-                    // data = JSON.parse(data);
                     if (data) {
                         // use jsdom to parse xml
                         jsdom.env(data, [
                             __dirname + '/public/js/libs/jquery-1.7.2.min.js'
                         ],
                         function(errors, window) {
-                            window.$('pages > page').each(function(index) {
+                            window.$('#topics li').each(function(index) {
                                 result.trends.push({
-                                    'total-pageviews': window.$(this).find('total-pageviews').text(),
-                                    url: window.$(this).find('url').text(),
-                                    title: window.$(this).find('title').text()
+                                    url: window.$(this).find('h3 > a').attr('href').replace('http://en.wikipedia.org/wiki/', ''),
+                                    title: window.$(this).find('h3 > a').text(),
+                                    change: window.$(this).find('h3 > span').text(),
+                                    summary: window.$(this).find('.summary').text()
                                 });
                             });
+                            // window.$('pages > page').each(function(index) {
+                            //     result.trends.push({
+                            //         'total-pageviews': window.$(this).find('total-pageviews').text(),
+                            //         url: window.$(this).find('url').text(),
+                            //         title: window.$(this).find('title').text()
+                            //     });
+                            // });
                             result.result = true;
                             console.log("WikiTrends: Got trends.")
                             addToCache('__trends__', JSON.stringify(result.trends), 3600*4);
@@ -223,8 +234,7 @@ function getWikiTrends(response, cb) {
 }
 
 function addToCache(title, article, expire) {
-    if(typeof(expire)==='undefined') a = 604800;
-
+    if(typeof(expire)==='undefined') expire = 604800;
     console.log("Cache: adding " + title + " for " + expire + "s");
     redis.set('article:'+title, article);
     redis.expire('article:'+title, expire);
