@@ -40,7 +40,13 @@ app.get('/calls',function(req, res) {
     res.render('client');
 });
 app.get('/wiki',function(req, res) {
-    res.redirect('/wiki/Pearl_Jam');
+    getWikiTrends(res, function(trends) {
+        if (trends && trends.result) {
+            res.render('trends', {trends: trends.trends});
+        } else {
+            res.render('error', {error: trends.error});
+        }
+    });
 });
 app.get('/wiki/:title?/:extra?', function(req, res) {
     getWikiArticle(res, req.params.title, function(article) {
@@ -109,18 +115,27 @@ function getWikiArticle(response, title, cb) {
                                 // 'table.metadata',
                                 // 'table.toc',
                                 // 'table.vertical-navbox',
+                                'a.Listen',
                                 'sup.reference',
+                                'sup.noexerpt',
                                 'strong.error',
                                 'div.dablink',
                                 'div.thumbcaption',
-                                'span.editsection'
+                                'span.editsection',
+                                'img:gt(1)' // all images except first one
                             ];
                             var elementsToUnwrap = [
                                 'a.image > img.thumbimage'
                             ];
+                            var elementsToDelink = [
+                                'a.new'
+                            ];
                             console.log('Removing from article: ' + elementsToRemove.join());
-                            window.$(elementsToRemove.join()).remove();
                             window.$(elementsToUnwrap.join()).unwrap();
+                            window.$(elementsToRemove.join()).remove();
+                            window.$(elementsToDelink.join()).each(function() {
+                                window.$(this).replaceWith(window.$(this).text());
+                            });
                             result.result = true;
                             result.article = window.$("body").html();
                             console.log("WikiAPI: Got article.")
@@ -144,8 +159,72 @@ function getWikiArticle(response, title, cb) {
     });
 }
 
-function addToCache(title, article) {
-    var expire = 604800;
+function getWikiTrends(response, cb) {
+    console.log("Getting Wiki trends");
+    getFromCache('__trends__', function(cacheResponse) {
+        // console.log('cacheResponse: ', cacheResponse);
+        if (cacheResponse.result) {
+            console.log("Got Wiki trends from cache");
+            cacheResponse.trends = JSON.parse(cacheResponse.article);
+            cb(cacheResponse);
+        } else {
+            // check for special case pages
+            var opts = {
+                host: "www.trendingtopics.org",
+                path: '/pages.xml?page=1',
+                headers : {
+                    'user-agent': 'myTestWikiBot/0.1'
+                },
+                method: "GET"
+            };
+            console.log('WikiTrends: Making request ' + opts.host + opts.path);
+            var result = { result: false, error: '', trends: [] };
+            var apiRequest = http.request(opts, function(apiResp) {
+                var data = "";
+                apiResp.setEncoding('utf8');
+                apiResp.on('data', function (chunk) {
+                    data += chunk;
+                });
+                apiResp.on('end', function () {
+                    // data = JSON.parse(data);
+                    if (data) {
+                        // use jsdom to parse xml
+                        jsdom.env(data, [
+                            __dirname + '/public/js/libs/jquery-1.7.2.min.js'
+                        ],
+                        function(errors, window) {
+                            window.$('pages > page').each(function(index) {
+                                result.trends.push({
+                                    'total-pageviews': window.$(this).find('total-pageviews').text(),
+                                    url: window.$(this).find('url').text(),
+                                    title: window.$(this).find('title').text()
+                                });
+                            });
+                            result.result = true;
+                            console.log("WikiTrends: Got trends.")
+                            addToCache('__trends__', JSON.stringify(result.trends), 3600*4);
+                            cb(result);
+                        });
+                    } else {
+                        result.error = 'Unknow error.';
+                        console.log('WikiTrends: ' + result.error);
+                        cb(result);
+                    }
+                });
+            });
+            apiRequest.on('error', function(e) {
+                result.error = 'Request failed.';
+                console.log('WikiTrends: ' + result.error + ' ' + e.message);
+                cb(result);
+            });
+            apiRequest.end();
+        }
+    });
+}
+
+function addToCache(title, article, expire) {
+    if(typeof(expire)==='undefined') a = 604800;
+
     console.log("Cache: adding " + title + " for " + expire + "s");
     redis.set('article:'+title, article);
     redis.expire('article:'+title, expire);

@@ -10,9 +10,8 @@
 
 </head>
 <body>
-
     <header>
-        <h1>{% block title %}{% endblock %}</h1>
+        <h1>Wxit: {% block title %}{% endblock %}</h1>
         {% block header %}{% endblock %}
         <nav>
             <ul>
@@ -27,11 +26,13 @@
     </section>
 
     <footer>
+        {% block footer %}
     	<p style="color: #ccc; font-size: small;">
     		View <a href="http://en.wikipedia.org/wiki/{{ title }}">original article</a><br>
     		Text is available under the <a rel="license" href="//en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License">Creative Commons Attribution-ShareAlike License</a>; additional terms may apply. <a href="//wikimediafoundation.org/wiki/Terms_of_use">Terms of use</a> for details.<br>
     		Wikipedia&reg; is a registered trademark of the <a href="//www.wikimediafoundation.org/">Wikimedia Foundation, Inc.</a>, a non-profit organization.<br>
 		</p>
+		{% endblock %}
     </footer>
 </body>
 </html>

@@ -1,0 +1,15 @@
+{% extends 'layout.html' %}
+
+{% block title %}Recent Wxit Trends{% endblock %}
+
+{% block body %}
+<ol>
+    {% for trend in trends %}
+	    {% if loop.index <= 10 %}<!-- <li>{{ trend|raw }}</li> -->
+	    	<li><a href="/wiki/{{ trend.url }}">{{ trend.title }}</a> ({{ trend['total-pageviews'] }} total views)</li>
+	    {% endif %}
+    {% endfor %}
+</ol>
+{% endblock %}
+
+{% block footer %}{% endblock %}
